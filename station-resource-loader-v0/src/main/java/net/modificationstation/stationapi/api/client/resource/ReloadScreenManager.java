@@ -23,8 +23,6 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.Drawable;
-import org.lwjgl.opengl.SharedDrawable;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -59,9 +57,14 @@ public class ReloadScreenManager {
         applicationExecutor = ReloadScreenApplicationExecutor.INSTANCE;
         currentReload = some(new CompositeResourceReload());
         //noinspection deprecation
-        thread = some(new Thread(expression(ReloadScreenManager::onStartup).partiallyApply(
-                (Minecraft) FabricLoader.getInstance().getGameInstance(),
-                new SharedDrawable(Display.getDrawable())
+        thread = some(new Thread(expression((Minecraft minecraft) -> {
+            try {
+                onStartup(minecraft);
+            } catch (LWJGLException e) {
+                throw new RuntimeException(e);
+            }
+        }).partiallyApply(
+                (Minecraft) FabricLoader.getInstance().getGameInstance()
         )::get));
         thread.peek(Thread::start);
     }
@@ -104,14 +107,8 @@ public class ReloadScreenManager {
     }
 
     private static void onStartup(
-            final Minecraft minecraft,
-            final Drawable drawable
-    ) {
-        try {
-            drawable.makeCurrent();
-        } catch (LWJGLException e) {
-            throw new RuntimeException(e);
-        }
+            final Minecraft minecraft
+    ) throws LWJGLException {
         val done = new AtomicBoolean();
         val reloadScreen = new ReloadScreen(
                 minecraft.currentScreen,
@@ -151,12 +148,6 @@ public class ReloadScreenManager {
         glDisable(GL_FOG);
         glEnable(GL_ALPHA_TEST);
         glAlphaFunc(GL_GREATER, 0.1f);
-        try {
-            drawable.releaseContext();
-            drawable.destroy();
-        } catch (LWJGLException e) {
-            throw new RuntimeException(e);
-        }
         thread = none();
     }
 }

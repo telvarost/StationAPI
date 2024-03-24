@@ -50,6 +50,9 @@ allprojects {
     }
 
     dependencies {
+        // Adds LWJGL3 wrapper
+        implementation("com.github.Adventurecraft-Awakening:AC-LWJGL3-Injector:0.0.4")
+
         implementation("org.slf4j:slf4j-api:1.8.0-beta4")
         implementation("org.apache.logging.log4j:log4j-slf4j18-impl:2.17.2")
 
